@@ -1,63 +1,107 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { ColladaLoader } from 'three/examples/jsm/loaders/ColladaLoader.js';
-import { RoughnessMipmapper } from 'three/examples/jsm/utils/RoughnessMipmapper.js';
-import { Stats } from 'three/examples/jsm/libs/stats.module.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import head from './clover_body_solid.dae';
 import guard from './clover_guards_transparent.dae';
+import m_prop_cw from './prop_cw.dae';
+import m_prop_ccw from './prop_ccw.dae';
+import checker from './checkerboard.jpg';
 
+import * as $ from 'jquery'
+import {EditorState, EditorView, basicSetup} from "@codemirror/basic-setup"
+import {Compartment} from "@codemirror/state"
+import {defaultHighlightStyle} from "@codemirror/highlight"
+import { oneDark } from "@codemirror/theme-one-dark";
+import { python } from "@codemirror/lang-python"
 
-let mouseX = 0, mouseY = 0;
-let windowWidth, windowHeight, activeAction, previousAction;
-let mixer, actions;
+let container, controls;
+let camera, scene, renderer, model, guards, prop_ccw, prop_cw, prop_ccw2, prop_cw2;
+let group;
 
-let container, stats, clock, controls;
-let camera, scene, renderer, model, guards;
+let texture, material, plane;
+
 
 init();
 animate();
 
-const roughnessMipmapper = new RoughnessMipmapper(renderer);
+$(function() {
+    console.log("loaded");
+
+    let language = new Compartment, tabSize = new Compartment
+
+    let state = EditorState.create({
+        doc: "print(42)",
+        extensions: [
+            oneDark,
+             defaultHighlightStyle,
+            basicSetup,
+            language.of(python()),
+            tabSize.of(EditorState.tabSize.of(8))
+        ]
+    })
+
+    let view = new EditorView({state, parent: document.querySelector('.code-pane-html')});
+});
 
 
 function init() {
+    group = new THREE.Object3D();
 
     container = document.getElementById( 'container' );
 
-    camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 2000 );
-    camera.position.set( 8, 10, 8 );
+    camera = new THREE.PerspectiveCamera( 45, window.innerWidth * 0.5 / window.innerHeight, 0.1, 2000 );
+    camera.position.set( 0, 5, 20 );
     camera.lookAt( 0, 0, 0 );
 
     scene = new THREE.Scene();
-
-    
-
+    scene.background = new THREE.Color( 0x9fe0ff );
 
     // loading manager
 
     const loadingManager = new THREE.LoadingManager( function () {
-
-        scene.add( model );
-        scene.add( guards );
-
+        group.add( model );
+        group.add( guards );
+        group.add( prop_ccw );
+        group.add( prop_cw );
+        group.add( prop_ccw2 );
+        group.add( prop_cw2 );
+        scene.add( group );
+        group.position.set( 0, 0.75, 0 );
+        
+        let bb = new THREE.Box3().setFromObject(group);
+        let size = bb.getSize(new THREE.Vector3());
+        console.log( size );
     } );
 
     // collada
 
     const loader = new ColladaLoader( loadingManager );
     loader.load( head, function ( collada ) {
-
         model = collada.scene;
-        model.scale.set(10, 10, 10);
-
+        model.scale.set( 10, 10, 10 );
     } );
 
     loader.load( guard, function ( collada ) {
-
         guards = collada.scene;
-        guards.scale.set(10, 10, 10);
+        guards.scale.set( 10, 10, 10 );
+    } );
 
+    loader.load( m_prop_ccw, function ( collada ) {
+        prop_ccw = collada.scene;
+        prop_ccw2 = prop_ccw.clone();
+        prop_ccw.position.set(-0.826, 0, 0.826);
+        prop_ccw.scale.set( 10, 10, 10 );
+        prop_ccw2.position.set(0.826, 0, -0.826);
+        prop_ccw2.scale.set( 10, 10, 10 );
+    } );
+
+    loader.load( m_prop_cw, function ( collada ) {
+        prop_cw = collada.scene;
+        prop_cw2 = prop_cw.clone();
+        prop_cw.position.set(0.826, 0, 0.826);
+        prop_cw.scale.set( 10, 10, 10 );
+        prop_cw2.position.set(-0.826, 0, -0.826);
+        prop_cw2.scale.set( 10, 10, 10 );
     } );
 
     //
@@ -73,7 +117,7 @@ function init() {
 
     renderer = new THREE.WebGLRenderer();
     renderer.setPixelRatio( window.devicePixelRatio );
-    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.setSize( window.innerWidth / 2, window.innerHeight );
     container.appendChild( renderer.domElement );
 
     controls = new OrbitControls( camera, renderer.domElement );
@@ -84,6 +128,25 @@ function init() {
 
     controls.screenSpacePanning = false;
 
+    texture = THREE.ImageUtils.loadTexture( checker );
+
+    // assuming you want the texture to repeat in both directions:
+    texture.wrapS = THREE.RepeatWrapping; 
+    texture.wrapT = THREE.RepeatWrapping;
+
+    // how many times to repeat in each direction; the default is (1,1),
+    //   which is probably why your example wasn't working
+    texture.repeat.set( 400, 400 ); 
+
+    material = new THREE.MeshLambertMaterial({ map : texture });
+    plane = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), material);
+    plane.material.side = THREE.DoubleSide;
+
+    // rotation.z is rotation around the z-axis, measured in radians (rather than degrees)
+    // Math.PI = 180 degrees, Math.PI / 2 = 90 degrees, etc.
+    plane.rotation.x = Math.PI / 2;
+
+    scene.add(plane);
 
 }
 

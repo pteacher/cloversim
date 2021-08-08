@@ -24,12 +24,18 @@
   },
   "homepage": "https://pteacher.github.io/cloversim",
   "dependencies": {
-    "codemirror": "^5.62.2",
+    "@codemirror/basic-setup": "^0.18.2",
+    "@codemirror/lang-python": "^0.18.1",
+    "@codemirror/next": "^0.16.0",
+    "@codemirror/theme-one-dark": "^0.18.1",
     "gh-pages": "^3.2.3",
+    "jquery": "^3.6.0",
     "lodash": "^4.17.21",
     "three": "^0.131.3"
   },
   "devDependencies": {
+    "css-loader": "^6.2.0",
+    "style-loader": "^3.2.1",
     "webpack": "^5.49.0",
     "webpack-cli": "^4.7.2"
   }
