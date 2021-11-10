@@ -1,45 +1,49 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-	<meta charset="utf-8">
-	<title>Clover Simulator Demo</title>
-	<style>
-		body { margin: 0; }
-		.line-error {
-			background: #CC2222 !important;
-			color: #8a1f11 !important;
-		}
-	</style>
-	<link rel="stylesheet" href="styles.css">
+    <meta charset="utf-8">
+    <title>Clover Simulator Demo</title>
+    <style>
+        body { margin: 0; }
+        .line-error {
+            background: #CC2222 !important;
+            color: #8a1f11 !important;
+        }
+    </style>
+    <link rel="stylesheet" href="styles.css">
 
 </head>
 <body>
 <div id="wrapper">
-	<section id="utils">
-		<div class="logo">
-			<a href="#"></a>
-		</div>
-		<div class="code-swap">
-			<span class="toggle-view">view <i class="fa fa-chevron-down"></i></span>
-			<span class="run-script">Запуск <i class="fa fa-bolt"></i></span>
-		</div>
-		<div class="code-tools">
-		</div>
-	</section>
-	<section id="editor">
-		<div class="code-pane">
-			<div class="code-pane-html">
+    <section id="utils">
+        <div class="logo">
+            <a href="#"></a>
+        </div>
+        <div class="code-swap">
+            <span class="toggle-view">view <i class="fa fa-chevron-down"></i></span>
+            <span class="run-script">Запуск <i class="fa fa-bolt"></i></span>
+        </div>
+        <div class="code-tools">
+        </div>
+    </section>
+    <section id="editor">
+        <div class="code-pane">
+            <div class="code-pane-html">
 
-			</div>
-		</div>
-		<div class="preview-pane" id="container">
-			<span class="preview-width" ></span>
-		</div>
-	</section>
+            </div>
+            <div id="output"></div>
+        </div>
+        <div class="preview-pane" id="container">
+            <span class="preview-width" ></span>
+        </div>
+    </section>
+    <section id="debug-pane">
+        <div id="debug">></div>
+    </section>
 </div>
 
 <script src="main.js"></script>
-<pre id="codesample" hidden>
+<pre id="codesample">
 # coding: utf8
 
 import rospy
@@ -71,6 +75,7 @@ rospy.sleep(3)
 
 # Посадка
 land()
-		</pre>
+
+</pre>
 </body>
 </html>
