@@ -13,44 +13,107 @@ import {Compartment} from "@codemirror/state"
 import {defaultHighlightStyle} from "@codemirror/highlight"
 import { oneDark } from "@codemirror/theme-one-dark";
 import { python } from "@codemirror/lang-python"
+import * as Sk from 'skulpt'
 
 let container, controls;
 let camera, scene, renderer, model, guards, prop_ccw, prop_cw, prop_ccw2, prop_cw2;
-let group;
+let group = new THREE.Object3D();
+let view, state;
 
 let texture, material, plane;
 
 
+
 init();
-animate();
+
 
 $(function() {
-    console.log("loaded");
-
     let language = new Compartment, tabSize = new Compartment
 
-    let state = EditorState.create({
-        doc: "print(42)",
+    state = EditorState.create({
+        doc: document.getElementById("codesample").innerHTML,
         extensions: [
             oneDark,
-             defaultHighlightStyle,
+            defaultHighlightStyle,
             basicSetup,
             language.of(python()),
-            tabSize.of(EditorState.tabSize.of(8))
+            tabSize.of(EditorState.tabSize.of(4))
         ]
     })
 
-    let view = new EditorView({state, parent: document.querySelector('.code-pane-html')});
+    view = new EditorView({state, defaultCharacterWidth: 8, parent: document.querySelector('.code-pane-html')});
 });
+
+function outf(text) {
+    $("#output").text($("#output").text() + text)
+}
+function builtinRead(x) {
+    if (Sk.builtinFiles === undefined || Sk.builtinFiles["files"][x] === undefined)
+        throw "File not found: '" + x + "'";
+    return Sk.builtinFiles["files"][x];
+}
+
+function runit() {
+    let prog = state.doc.toString();
+    // Sk.externalLibraries = {
+    //     rospy : {
+    //         path: "rospy.js",
+    //     },
+    // };
+    //
+    // Sk.builtins = {
+    //     rospy: Sk.builtin.rospy,
+    // }
+
+    Sk.configure({
+        output:outf,
+        read:builtinRead,
+        __future__: Sk.python3
+    });
+
+    let myPromise = Sk.misceval.asyncToPromise(function() {
+        return Sk.importMainWithBody("<stdin>", false, prog, true);
+    });
+    myPromise.then(function(mod) {
+            try {
+                console.log($("#output").text());
+                eval($("#output").text());
+            } catch(e) {
+                alert('Исправьте ошибки');
+            }
+
+        },
+        function(err) {
+            let msg = err.toString();
+            $("#debug").text(msg);
+            console.log(msg);
+            // view.addLineClass(msg.split(" ")[msg.split(" ").length-1] - 1, 'wrap', 'line-error');
+        });
+}
+
+function sleep(x) {
+    console.log("sleep: " + x);
+}
+
+function land() {
+    // group.position.set( 0, 0, 0 );
+}
+
+function nav(x, y, z, frame_id, auto_arm) {
+    console.log("move");
+    group.position.set( group.position.x + y*10, group.position.y + z*10, group.position.z - x*10 );
+}
 
 
 function init() {
-    group = new THREE.Object3D();
+    $(".run-script").on("click", function () {
+        runit();
+    });
 
     container = document.getElementById( 'container' );
 
     camera = new THREE.PerspectiveCamera( 45, window.innerWidth * 0.5 / window.innerHeight, 0.1, 2000 );
-    camera.position.set( 0, 5, 20 );
+    camera.position.set( -10, 15, 20 );
     camera.lookAt( 0, 0, 0 );
 
     scene = new THREE.Scene();
@@ -66,11 +129,12 @@ function init() {
         group.add( prop_ccw2 );
         group.add( prop_cw2 );
         scene.add( group );
-        group.position.set( 0, 0.75, 0 );
-        
+
+
         let bb = new THREE.Box3().setFromObject(group);
         let size = bb.getSize(new THREE.Vector3());
-        console.log( size );
+        group.position.set( 0, -bb.min.y, 0 );
+        animate();
     } );
 
     // collada
@@ -113,8 +177,6 @@ function init() {
     directionalLight.position.set( 1, 1, 0 ).normalize();
     scene.add( directionalLight );
 
-    //
-
     renderer = new THREE.WebGLRenderer();
     renderer.setPixelRatio( window.devicePixelRatio );
     renderer.setSize( window.innerWidth / 2, window.innerHeight );
@@ -131,12 +193,12 @@ function init() {
     texture = THREE.ImageUtils.loadTexture( checker );
 
     // assuming you want the texture to repeat in both directions:
-    texture.wrapS = THREE.RepeatWrapping; 
+    texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
 
     // how many times to repeat in each direction; the default is (1,1),
     //   which is probably why your example wasn't working
-    texture.repeat.set( 400, 400 ); 
+    texture.repeat.set( 400, 400 );
 
     material = new THREE.MeshLambertMaterial({ map : texture });
     plane = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), material);
@@ -147,13 +209,19 @@ function init() {
     plane.rotation.x = Math.PI / 2;
 
     scene.add(plane);
-
+    animate();
 }
 
 
 function animate() {
+    if (group.children.length > 0) {
+        group.children[2].rotation.z += 0.1;
+        group.children[3].rotation.z -= 0.1;
+        group.children[4].rotation.z += 0.1;
+        group.children[5].rotation.z -= 0.1;
+    }
     requestAnimationFrame( animate );
-    controls.update(); 
+    controls.update();
     render();
 }
 
