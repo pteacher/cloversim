@@ -16,13 +16,13 @@ import { python } from "@codemirror/lang-python"
 
 let container, controls;
 let camera, scene, renderer, model, guards, prop_ccw, prop_cw, prop_ccw2, prop_cw2;
-let group;
+let group = new THREE.Object3D();
 
 let texture, material, plane;
 
 
 init();
-animate();
+
 
 $(function() {
     console.log("loaded");
@@ -30,27 +30,25 @@ $(function() {
     let language = new Compartment, tabSize = new Compartment
 
     let state = EditorState.create({
-        doc: "print(42)",
+        doc: document.getElementById("codesample").innerHTML,
         extensions: [
             oneDark,
-             defaultHighlightStyle,
+            defaultHighlightStyle,
             basicSetup,
             language.of(python()),
-            tabSize.of(EditorState.tabSize.of(8))
+            tabSize.of(EditorState.tabSize.of(4))
         ]
     })
 
-    let view = new EditorView({state, parent: document.querySelector('.code-pane-html')});
+    let view = new EditorView({state, defaultCharacterWidt: 8, parent: document.querySelector('.code-pane-html')});
 });
 
 
 function init() {
-    group = new THREE.Object3D();
-
     container = document.getElementById( 'container' );
 
     camera = new THREE.PerspectiveCamera( 45, window.innerWidth * 0.5 / window.innerHeight, 0.1, 2000 );
-    camera.position.set( 0, 5, 20 );
+    camera.position.set( -10, 15, 20 );
     camera.lookAt( 0, 0, 0 );
 
     scene = new THREE.Scene();
@@ -66,11 +64,13 @@ function init() {
         group.add( prop_ccw2 );
         group.add( prop_cw2 );
         scene.add( group );
-        group.position.set( 0, 0.75, 0 );
+        group.position.set( 0, 0.86, 0 );
         
         let bb = new THREE.Box3().setFromObject(group);
         let size = bb.getSize(new THREE.Vector3());
         console.log( size );
+        console.log( group.children );
+        animate();
     } );
 
     // collada
@@ -147,11 +147,17 @@ function init() {
     plane.rotation.x = Math.PI / 2;
 
     scene.add(plane);
-
+    animate();
 }
 
 
 function animate() {
+    if (group.children.length > 0) {
+        group.children[2].rotation.z += 0.1;
+        group.children[3].rotation.z -= 0.1;
+        group.children[4].rotation.z += 0.1;
+        group.children[5].rotation.z -= 0.1;
+    }
     requestAnimationFrame( animate );
     controls.update(); 
     render();
