@@ -38,8 +38,8 @@
 			</section>
 		</div>
 
-		<script src="main.js"></script>
-		<pre id="codesample" hidden>
+<script src="main.js"></script>
+<pre id="codesample">
 # coding: utf8
 
 import rospy
@@ -58,19 +58,21 @@ set_rates = rospy.ServiceProxy('set_rates', srv.SetRates)
 land = rospy.ServiceProxy('land', Trigger)
 
 # Взлет на высоту 1 м
-navigate(x=0, y=0, z=1, frame_id='body', auto_arm=True)
+navigate(0, 0, 1, 'body', True)
 
 # Ожидание 3 секунды
 rospy.sleep(3)
 
 # Пролет вперед 1 метр
-navigate(x=1, y=0, z=0, frame_id='body')
+navigate(1, 0, 0, 'body')
 
 # Ожидание 3 секунды
 rospy.sleep(3)
 
 # Посадка
 land()
-		</pre>
-	</body>
+
+
+</pre>
+</body>
 </html>
