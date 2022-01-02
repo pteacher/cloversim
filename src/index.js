@@ -13,34 +13,77 @@ import {Compartment} from "@codemirror/state"
 import {defaultHighlightStyle} from "@codemirror/highlight"
 import { oneDark } from "@codemirror/theme-one-dark";
 import { python } from "@codemirror/lang-python"
+import * as Sk from 'skulpt'
 
 let container, controls;
 let camera, scene, renderer, model, guards, prop_ccw, prop_cw, prop_ccw2, prop_cw2;
-let group;
+let group = new THREE.Object3D();
+let view, state;
 
 let texture, material, plane;
 
 
+
 init();
-animate();
+
+dragElement(document.getElementById("terminal"));
+
+function dragElement(elmnt) {
+    var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+    if (document.getElementById(elmnt.id + "header")) {
+        // if present, the header is where you move the DIV from:
+        document.getElementById(elmnt.id + "header").onmousedown = dragMouseDown;
+    } else {
+        // otherwise, move the DIV from anywhere inside the DIV:
+        elmnt.onmousedown = dragMouseDown;
+    }
+
+    function dragMouseDown(e) {
+        e = e || window.event;
+        e.preventDefault();
+        // get the mouse cursor position at startup:
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        document.onmouseup = closeDragElement;
+        // call a function whenever the cursor moves:
+        document.onmousemove = elementDrag;
+    }
+
+    function elementDrag(e) {
+        e = e || window.event;
+        e.preventDefault();
+        // calculate the new cursor position:
+        pos1 = pos3 - e.clientX;
+        pos2 = pos4 - e.clientY;
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        // set the element's new position:
+        elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+        elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+    }
+
+    function closeDragElement() {
+        // stop moving when mouse button is released:
+        document.onmouseup = null;
+        document.onmousemove = null;
+    }
+}
 
 $(function() {
-    console.log("loaded");
-
     let language = new Compartment, tabSize = new Compartment
 
-    let state = EditorState.create({
-        doc: "print(42)",
+    state = EditorState.create({
+        doc: document.getElementById("codesample").innerHTML,
         extensions: [
             oneDark,
-             defaultHighlightStyle,
+            defaultHighlightStyle,
             basicSetup,
             language.of(python()),
-            tabSize.of(EditorState.tabSize.of(8))
+            tabSize.of(EditorState.tabSize.of(4))
         ]
     })
 
-    let view = new EditorView({state, parent: document.querySelector('.code-pane-html')});
+    view = new EditorView({state, defaultCharacterWidth: 8, parent: document.querySelector('.code-pane-html')});
 });
 
 function outf(text) {
@@ -105,12 +148,14 @@ function nav(x, y, z, frame_id, auto_arm) {
 
 
 function init() {
-    group = new THREE.Object3D();
+    $(".run-script").on("click", function () {
+        runit();
+    });
 
     container = document.getElementById( 'container' );
 
     camera = new THREE.PerspectiveCamera( 45, window.innerWidth * 0.5 / window.innerHeight, 0.1, 2000 );
-    camera.position.set( 0, 5, 20 );
+    camera.position.set( -10, 15, 20 );
     camera.lookAt( 0, 0, 0 );
 
     scene = new THREE.Scene();
@@ -126,11 +171,12 @@ function init() {
         group.add( prop_ccw2 );
         group.add( prop_cw2 );
         scene.add( group );
-        group.position.set( 0, 0.75, 0 );
-        
+
+
         let bb = new THREE.Box3().setFromObject(group);
         let size = bb.getSize(new THREE.Vector3());
-        console.log( size );
+        group.position.set( 0, -bb.min.y, 0 );
+        animate();
     } );
 
     // collada
@@ -173,8 +219,6 @@ function init() {
     directionalLight.position.set( 1, 1, 0 ).normalize();
     scene.add( directionalLight );
 
-    //
-
     renderer = new THREE.WebGLRenderer();
     renderer.setPixelRatio( window.devicePixelRatio );
     renderer.setSize( window.innerWidth / 2, window.innerHeight );
@@ -191,12 +235,12 @@ function init() {
     texture = THREE.ImageUtils.loadTexture( checker );
 
     // assuming you want the texture to repeat in both directions:
-    texture.wrapS = THREE.RepeatWrapping; 
+    texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
 
     // how many times to repeat in each direction; the default is (1,1),
     //   which is probably why your example wasn't working
-    texture.repeat.set( 400, 400 ); 
+    texture.repeat.set( 400, 400 );
 
     material = new THREE.MeshLambertMaterial({ map : texture });
     plane = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), material);
@@ -207,7 +251,7 @@ function init() {
     plane.rotation.x = Math.PI / 2;
 
     scene.add(plane);
-
+    animate();
 }
 
 
@@ -219,10 +263,12 @@ function animate() {
         group.children[5].rotation.z -= 0.1;
     }
     requestAnimationFrame( animate );
-    controls.update(); 
+    controls.update();
     render();
 }
 
 function render() {
     renderer.render( scene, camera );
 }
+
+
